@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Furniture Bank — Weekly Delivery Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root,[data-theme="light"]{
+  --color-bg:#f7f6f2;--color-surface:#f9f8f5;--color-surface-2:#fbfbf9;
+  --color-surface-offset:#f3f0ec;--color-border:rgba(40,37,29,0.12);
+  --color-divider:#dcd9d5;
+  --color-text:#28251d;--color-text-muted:#7a7974;--color-text-faint:#bab9b4;
+  --color-primary:#01696f;--color-primary-hover:#0c4e54;--color-primary-highlight:#cedcd8;
+  --color-warning:#964219;--color-warning-highlight:#fef3ec;
+  --color-error:#a12c7b;--color-error-highlight:#fdf0f8;
+  --color-success:#437a22;--color-success-highlight:#eef5e9;
+  --color-gold:#d19900;--color-gold-highlight:#fdf8e6;
+  --shadow-sm:0 1px 3px rgba(40,37,29,0.07);
+  --shadow-md:0 4px 16px rgba(40,37,29,0.09);
+  --radius-sm:0.375rem;--radius-md:0.5rem;--radius-lg:0.75rem;--radius-xl:1rem;
+  --font-body:'Inter',system-ui,sans-serif;
+  --font-display:'DM Serif Display',Georgia,serif;
+  --space-1:0.25rem;--space-2:0.5rem;--space-3:0.75rem;--space-4:1rem;
+  --space-5:1.25rem;--space-6:1.5rem;--space-8:2rem;--space-10:2.5rem;--space-12:3rem;
+}
+[data-theme="dark"]{
+  --color-bg:#171614;--color-surface:#1c1b19;--color-surface-2:#201f1d;
+  --color-surface-offset:#232220;--color-border:rgba(205,204,202,0.1);
+  --color-divider:#262523;
+  --color-text:#cdccca;--color-text-muted:#797876;--color-text-faint:#5a5957;
+  --color-primary:#4f98a3;--color-primary-hover:#227f8b;--color-primary-highlight:#1e3032;
+  --color-warning:#bb653b;--color-warning-highlight:#2a1e15;
+  --color-error:#d163a7;--color-error-highlight:#2d1525;
+  --color-success:#6daa45;--color-success-highlight:#1a2714;
+  --color-gold:#e8af34;--color-gold-highlight:#2a2210;
+  --shadow-sm:0 1px 3px rgba(0,0,0,0.25);--shadow-md:0 4px 16px rgba(0,0,0,0.35);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;scroll-behavior:smooth}
+body{font-family:var(--font-body);font-size:0.9375rem;color:var(--color-text);background:var(--color-bg);min-height:100dvh;line-height:1.6;transition:background 0.2s,color 0.2s}
+img,svg{display:block}
+button{cursor:pointer;border:none;background:none;font:inherit;color:inherit}
+table{border-collapse:collapse;width:100%}
+
+/* Layout */
+.app{display:grid;grid-template-rows:auto 1fr;min-height:100dvh}
+.topbar{background:var(--color-surface);border-bottom:1px solid var(--color-border);padding:0 var(--space-6);display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;box-shadow:var(--shadow-sm)}
+.topbar-left{display:flex;align-items:center;gap:var(--space-3)}
+.logo{display:flex;align-items:center;gap:var(--space-2)}
+.logo-mark{width:28px;height:28px}
+.logo-text{font-family:var(--font-display);font-size:1.1rem;color:var(--color-primary)}
+.topbar-title{font-size:0.8125rem;color:var(--color-text-muted);border-left:1px solid var(--color-border);padding-left:var(--space-3);margin-left:var(--space-1)}
+.topbar-right{display:flex;align-items:center;gap:var(--space-3)}
+.badge-week{font-size:0.75rem;font-weight:600;background:var(--color-primary-highlight);color:var(--color-primary);padding:0.2rem 0.625rem;border-radius:9999px;letter-spacing:0.02em}
+.theme-btn{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-md);color:var(--color-text-muted);transition:background 0.15s,color 0.15s}
+.theme-btn:hover{background:var(--color-surface-offset);color:var(--color-text)}
+.main{padding:var(--space-6);max-width:1280px;margin:0 auto;width:100%}
+
+/* KPI row */
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:var(--space-4);margin-bottom:var(--space-6)}
+@media(max-width:900px){.kpi-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:600px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+.kpi-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-4) var(--space-5);box-shadow:var(--shadow-sm)}
+.kpi-label{font-size:0.75rem;font-weight:500;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:var(--space-2)}
+.kpi-value{font-size:1.75rem;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;color:var(--color-text)}
+.kpi-value.risk{color:var(--color-warning)}
+.kpi-value.ok{color:var(--color-success)}
+.kpi-sub{font-size:0.75rem;color:var(--color-text-faint);margin-top:var(--space-1)}
+
+/* Content grid */
+.content-grid{display:grid;grid-template-columns:1fr 340px;gap:var(--space-5);margin-bottom:var(--space-5)}
+@media(max-width:960px){.content-grid{grid-template-columns:1fr}}
+
+/* Cards */
+.card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);overflow:hidden}
+.card-header{padding:var(--space-4) var(--space-5);border-bottom:1px solid var(--color-divider);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:0.875rem;font-weight:600;color:var(--color-text)}
+.card-sub{font-size:0.75rem;color:var(--color-text-muted)}
+.card-body{padding:var(--space-4) var(--space-5)}
+
+/* Day filter tabs */
+.day-tabs{display:flex;gap:var(--space-1);flex-wrap:wrap;margin-bottom:var(--space-5)}
+.day-tab{font-size:0.8125rem;font-weight:500;padding:0.375rem 0.875rem;border-radius:9999px;border:1px solid var(--color-border);color:var(--color-text-muted);background:var(--color-surface);cursor:pointer;transition:all 0.15s}
+.day-tab:hover{background:var(--color-surface-offset);color:var(--color-text)}
+.day-tab.active{background:var(--color-primary);border-color:var(--color-primary);color:#fff}
+.day-tab .risk-dot{display:inline-block;width:6px;height:6px;background:#e07030;border-radius:50%;margin-left:5px;vertical-align:middle}
+
+/* Table */
+.table-wrap{overflow-x:auto}
+table{font-size:0.8125rem}
+thead th{font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--color-text-muted);padding:var(--space-2) var(--space-3);text-align:left;border-bottom:1px solid var(--color-divider);white-space:nowrap;background:var(--color-surface-offset)}
+tbody tr{border-bottom:1px solid var(--color-divider);transition:background 0.1s}
+tbody tr:hover{background:var(--color-surface-offset)}
+tbody tr:last-child{border-bottom:none}
+tbody td{padding:var(--space-2) var(--space-3);vertical-align:middle}
+.td-id{font-weight:600;color:var(--color-text-muted);font-size:0.75rem}
+.td-time{font-variant-numeric:tabular-nums;white-space:nowrap}
+.td-name{font-weight:500}
+
+/* Status pill */
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:0.7rem;font-weight:600;padding:0.2rem 0.5rem;border-radius:9999px;white-space:nowrap}
+.pill-scheduled{background:var(--color-primary-highlight);color:var(--color-primary)}
+.pill-completed{background:var(--color-success-highlight);color:var(--color-success)}
+.pill-at-risk{background:var(--color-warning-highlight);color:var(--color-warning)}
+.pill-cancelled{background:var(--color-surface-offset);color:var(--color-text-muted)}
+.pill-dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+
+/* Risk flag */
+.risk-tag{font-size:0.7rem;color:var(--color-warning);background:var(--color-warning-highlight);border-radius:var(--radius-sm);padding:0.15rem 0.4rem;white-space:nowrap}
+
+/* Risk panel */
+.risk-panel{display:flex;flex-direction:column;gap:var(--space-3)}
+.risk-item{border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);background:var(--color-surface-2)}
+.risk-item-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-1)}
+.risk-id{font-size:0.75rem;font-weight:700;color:var(--color-text)}
+.risk-day{font-size:0.7rem;color:var(--color-text-muted)}
+.risk-reason{font-size:0.75rem;color:var(--color-warning);font-weight:500;margin-bottom:2px}
+.risk-meta{font-size:0.7rem;color:var(--color-text-faint)}
+
+/* Chart area */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-5);margin-bottom:var(--space-5)}
+@media(max-width:700px){.charts-row{grid-template-columns:1fr}}
+.chart-container{position:relative;height:220px}
+
+/* Truck load */
+.truck-grid{display:flex;flex-direction:column;gap:var(--space-3)}
+.truck-row{display:flex;align-items:center;gap:var(--space-3)}
+.truck-name{font-size:0.75rem;font-weight:600;color:var(--color-text-muted);width:60px;flex-shrink:0}
+.truck-bar-wrap{flex:1;height:20px;background:var(--color-surface-offset);border-radius:9999px;overflow:hidden}
+.truck-bar{height:100%;border-radius:9999px;transition:width 0.5s ease;background:var(--color-primary)}
+.truck-bar.risk{background:var(--color-warning)}
+.truck-count{font-size:0.75rem;font-variant-numeric:tabular-nums;color:var(--color-text-muted);width:30px;text-align:right;flex-shrink:0}
+
+
+/* Ask data */
+.ask-card .card-body{display:grid;gap:var(--space-4)}
+.ask-grid{display:grid;grid-template-columns:1.15fr 0.85fr;gap:var(--space-5)}
+@media(max-width:900px){.ask-grid{grid-template-columns:1fr}}
+.ask-box{display:flex;gap:var(--space-2);align-items:center;flex-wrap:wrap}
+.ask-input{flex:1;min-width:220px;padding:0.75rem 0.875rem;border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface-2);color:var(--color-text)}
+.ask-btn{padding:0.75rem 0.95rem;background:var(--color-primary);color:#fff;border-radius:var(--radius-md);font-size:0.8125rem;font-weight:600}
+.ask-btn:hover{background:var(--color-primary-hover)}
+.ask-answer{border:1px solid var(--color-border);background:var(--color-surface-2);border-radius:var(--radius-md);padding:var(--space-4);font-size:0.875rem;line-height:1.55}
+.ask-answer strong{color:var(--color-primary)}
+.ask-examples{display:flex;flex-wrap:wrap;gap:var(--space-2)}
+.ask-chip{font-size:0.75rem;padding:0.35rem 0.6rem;border:1px solid var(--color-border);background:var(--color-surface-offset);border-radius:9999px;color:var(--color-text-muted)}
+.ask-chip:hover{background:var(--color-primary-highlight);color:var(--color-primary)}
+
+/* Insight banner */
+.insight{background:var(--color-gold-highlight);border:1px solid rgba(209,153,0,0.2);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);font-size:0.8125rem;color:var(--color-text);line-height:1.5;margin-bottom:var(--space-5)}
+.insight strong{color:var(--color-gold);font-weight:700}
+
+/* Prototype label */
+.proto-banner{text-align:center;font-size:0.7rem;color:var(--color-text-faint);padding:var(--space-3);border-top:1px solid var(--color-divider);background:var(--color-surface)}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="logo">
+        <svg class="logo-mark" viewBox="0 0 28 28" fill="none" aria-label="Furniture Bank logo">
+          <rect width="28" height="28" rx="6" fill="#01696f"/>
+          <rect x="5" y="13" width="18" height="9" rx="2" fill="white" opacity="0.9"/>
+          <rect x="8" y="10" width="12" height="5" rx="1.5" fill="white" opacity="0.6"/>
+          <rect x="7" y="22" width="3" height="3" rx="1" fill="white" opacity="0.7"/>
+          <rect x="18" y="22" width="3" height="3" rx="1" fill="white" opacity="0.7"/>
+        </svg>
+        <span class="logo-text">Furniture Bank</span>
+      </div>
+      <span class="topbar-title">Weekly Delivery Tracker</span>
+    </div>
+    <div class="topbar-right">
+      <span class="badge-week">Week of Apr 28 – May 2</span>
+      <button class="theme-btn" data-theme-toggle aria-label="Toggle theme">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <!-- KPI Row -->
+    <div class="kpi-grid" id="kpi-grid">
+      <!-- JS-rendered -->
+    </div>
+
+    <!-- Insight banner -->
+    <div class="insight" id="insight-banner"></div>
+
+    <!-- Day filter tabs -->
+    <div class="day-tabs" id="day-tabs"></div>
+
+
+    <div class="card ask-card" style="margin-bottom: var(--space-5)">
+      <div class="card-header">
+        <span class="card-title">Ask the Data</span>
+        <span class="card-sub">Plain-English querying for non-technical staff</span>
+      </div>
+      <div class="card-body ask-grid">
+        <div>
+          <div class="ask-box">
+            <input id="ask-input" class="ask-input" type="text" value="Which driver has the most at-risk deliveries?" aria-label="Ask the data" />
+            <button id="ask-btn" class="ask-btn">Run question</button>
+          </div>
+          <div class="ask-examples" style="margin-top: var(--space-3)">
+            <button class="ask-chip" data-q="How many deliveries are at risk this week?">At-risk this week</button>
+            <button class="ask-chip" data-q="Which driver has the most at-risk deliveries?">Driver with most risk</button>
+            <button class="ask-chip" data-q="What is the most common risk reason?">Top risk reason</button>
+            <button class="ask-chip" data-q="Which neighborhood has the most deliveries?">Top neighborhood</button>
+            <button class="ask-chip" data-q="How many families are being served on Wednesday?">Families on Wednesday</button>
+          </div>
+        </div>
+        <div id="ask-answer" class="ask-answer"></div>
+      </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="content-grid">
+      <!-- Delivery table -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Deliveries</span>
+          <span class="card-sub" id="table-sub"></span>
+        </div>
+        <div class="card-body" style="padding:0">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th><th>Time</th><th>Neighborhood</th>
+                  <th>Agency</th><th>Items</th><th>Driver</th>
+                  <th>Status</th><th>Flag</th>
+                </tr>
+              </thead>
+              <tbody id="delivery-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- At-risk panel -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">⚠ At-Risk This Week</span>
+          <span class="card-sub" id="risk-count-label"></span>
+        </div>
+        <div class="card-body">
+          <div class="risk-panel" id="risk-panel"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts row -->
+    <div class="charts-row">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Deliveries by Day</span>
+          <span class="card-sub">Status breakdown</span>
+        </div>
+        <div class="card-body">
+          <div class="chart-container"><canvas id="chart-day"></canvas></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Truck Load This Week</span>
+          <span class="card-sub">Scheduled + at-risk deliveries</span>
+        </div>
+        <div class="card-body">
+          <div class="truck-grid" id="truck-grid"></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+  <div class="proto-banner">⚠ MOCK-UP — Synthetic data for Stage 2 submission. Not connected to live Furniture Bank systems. Built by Jill Patel · April 2026</div>
+</div>
+
+<script>
+// ---- DATA ----
+const RAW = [
+  {id:"D1001",date:"2026-04-28",day:"Tuesday",time:"02:30 PM",hood:"North York",agency:"Eva's Initiatives",family:6,items:"Living room set",truck:"Truck 2",driver:"Devon L.",status:"Scheduled",flag:""},
+  {id:"D1002",date:"2026-04-28",day:"Tuesday",time:"08:30 AM",hood:"Downtown East",agency:"COSTI Immigrant Services",family:5,items:"Sofa + coffee table",truck:"Truck 1",driver:"Marcus T.",status:"Completed",flag:""},
+  {id:"D1003",date:"2026-04-28",day:"Tuesday",time:"08:00 AM",hood:"Regent Park",agency:"Salvation Army",family:3,items:"Full bedroom set",truck:"Truck 5",driver:"Omar K.",status:"Completed",flag:""},
+  {id:"D1004",date:"2026-04-28",day:"Tuesday",time:"03:00 PM",hood:"Etobicoke",agency:"CAMH",family:3,items:"Sofa + coffee table",truck:"Truck 4",driver:"Priya S.",status:"Scheduled",flag:""},
+  {id:"D1005",date:"2026-04-28",day:"Tuesday",time:"08:30 AM",hood:"Lawrence Heights",agency:"Toronto Community Housing",family:1,items:"Dining table + 4 chairs",truck:"Truck 1",driver:"Priya S.",status:"Scheduled",flag:""},
+  {id:"D1006",date:"2026-04-28",day:"Tuesday",time:"11:00 AM",hood:"Jane-Finch",agency:"Covenant House",family:6,items:"Kitchen essentials + bed",truck:"Truck 4",driver:"Marcus T.",status:"Cancelled",flag:""},
+  {id:"D1007",date:"2026-04-29",day:"Wednesday",time:"01:00 PM",hood:"Jane-Finch",agency:"Salvation Army",family:2,items:"Bed frame + mattress",truck:"Truck 1",driver:"Marcus T.",status:"Scheduled",flag:""},
+  {id:"D1008",date:"2026-04-29",day:"Wednesday",time:"11:30 AM",hood:"Thorncliffe Park",agency:"Eva's Initiatives",family:2,items:"Dining table + 4 chairs",truck:"Truck 4",driver:"Priya S.",status:"Scheduled",flag:""},
+  {id:"D1009",date:"2026-04-29",day:"Wednesday",time:"10:00 AM",hood:"Downtown East",agency:"Covenant House",family:4,items:"Sofa + coffee table",truck:"Truck 5",driver:"Devon L.",status:"Cancelled",flag:""},
+  {id:"D1010",date:"2026-04-29",day:"Wednesday",time:"02:00 PM",hood:"Scarborough",agency:"Salvation Army",family:3,items:"Kitchen essentials + bed",truck:"Truck 3",driver:"Marcus T.",status:"At Risk",flag:"Truck capacity conflict"},
+  {id:"D1011",date:"2026-04-29",day:"Wednesday",time:"08:00 AM",hood:"Regent Park",agency:"Salvation Army",family:6,items:"Dresser + bed frame",truck:"Truck 5",driver:"Priya S.",status:"At Risk",flag:"Truck capacity conflict"},
+  {id:"D1012",date:"2026-04-29",day:"Wednesday",time:"10:00 AM",hood:"Jane-Finch",agency:"Covenant House",family:5,items:"Living room set",truck:"Truck 2",driver:"Sandra W.",status:"At Risk",flag:"Client unreachable"},
+  {id:"D1013",date:"2026-04-29",day:"Wednesday",time:"10:00 AM",hood:"North York",agency:"Fred Victor",family:1,items:"Kitchen essentials + bed",truck:"Truck 2",driver:"Sandra W.",status:"At Risk",flag:"No elevator access"},
+  {id:"D1014",date:"2026-04-29",day:"Wednesday",time:"09:00 AM",hood:"Malvern",agency:"COSTI Immigrant Services",family:5,items:"Dresser + bed frame",truck:"Truck 4",driver:"Sandra W.",status:"Scheduled",flag:""},
+  {id:"D1015",date:"2026-04-29",day:"Wednesday",time:"01:00 PM",hood:"Thorncliffe Park",agency:"CAMH",family:3,items:"Bed frame + mattress",truck:"Truck 1",driver:"Sandra W.",status:"At Risk",flag:"Truck capacity conflict"},
+  {id:"D1016",date:"2026-04-29",day:"Wednesday",time:"11:00 AM",hood:"Weston",agency:"Eva's Initiatives",family:6,items:"Bed frame + mattress",truck:"Truck 3",driver:"Sandra W.",status:"At Risk",flag:"Client unreachable"},
+  {id:"D1017",date:"2026-04-30",day:"Thursday",time:"01:00 PM",hood:"Weston",agency:"Eva's Initiatives",family:5,items:"Kitchen essentials + bed",truck:"Truck 2",driver:"Priya S.",status:"Cancelled",flag:""},
+  {id:"D1018",date:"2026-04-30",day:"Thursday",time:"01:30 PM",hood:"Thorncliffe Park",agency:"COSTI Immigrant Services",family:3,items:"Kitchen essentials + bed",truck:"Truck 4",driver:"Marcus T.",status:"Scheduled",flag:""},
+  {id:"D1019",date:"2026-04-30",day:"Thursday",time:"08:00 AM",hood:"Regent Park",agency:"COSTI Immigrant Services",family:1,items:"Kitchen essentials + bed",truck:"Truck 5",driver:"Marcus T.",status:"Scheduled",flag:""},
+  {id:"D1020",date:"2026-04-30",day:"Thursday",time:"03:00 PM",hood:"Etobicoke",agency:"Covenant House",family:5,items:"Dining table + 4 chairs",truck:"Truck 2",driver:"Omar K.",status:"Completed",flag:""},
+  {id:"D1021",date:"2026-04-30",day:"Thursday",time:"11:00 AM",hood:"Malvern",agency:"CAMH",family:6,items:"Living room set",truck:"Truck 5",driver:"Devon L.",status:"Completed",flag:""},
+  {id:"D1022",date:"2026-04-30",day:"Thursday",time:"11:30 AM",hood:"North York",agency:"Salvation Army",family:1,items:"Dining table + 4 chairs",truck:"Truck 1",driver:"Devon L.",status:"Scheduled",flag:""},
+  {id:"D1023",date:"2026-04-30",day:"Thursday",time:"01:00 PM",hood:"North York",agency:"Dixon Hall",family:6,items:"Living room set",truck:"Truck 5",driver:"Devon L.",status:"Completed",flag:""},
+  {id:"D1024",date:"2026-04-30",day:"Thursday",time:"09:00 AM",hood:"Weston",agency:"COSTI Immigrant Services",family:3,items:"Sofa + coffee table",truck:"Truck 1",driver:"Priya S.",status:"Scheduled",flag:""},
+  {id:"D1025",date:"2026-05-01",day:"Friday",time:"01:00 PM",hood:"Downtown East",agency:"Fred Victor",family:4,items:"Kitchen essentials + bed",truck:"Truck 5",driver:"Sandra W.",status:"Scheduled",flag:""},
+  {id:"D1026",date:"2026-05-01",day:"Friday",time:"08:00 AM",hood:"Malvern",agency:"Sketch",family:6,items:"Dresser + bed frame",truck:"Truck 4",driver:"Priya S.",status:"At Risk",flag:"Client unreachable"},
+  {id:"D1027",date:"2026-05-01",day:"Friday",time:"02:00 PM",hood:"North York",agency:"Toronto Community Housing",family:2,items:"Sofa + coffee table",truck:"Truck 1",driver:"Omar K.",status:"Scheduled",flag:""},
+  {id:"D1028",date:"2026-05-01",day:"Friday",time:"01:30 PM",hood:"Jane-Finch",agency:"Eva's Initiatives",family:2,items:"Dresser + bed frame",truck:"Truck 2",driver:"Omar K.",status:"Scheduled",flag:""},
+  {id:"D1029",date:"2026-05-01",day:"Friday",time:"11:00 AM",hood:"North York",agency:"Dixon Hall",family:2,items:"Kitchen essentials + bed",truck:"Truck 1",driver:"Sandra W.",status:"Scheduled",flag:""},
+  {id:"D1030",date:"2026-05-01",day:"Friday",time:"11:30 AM",hood:"Scarborough",agency:"Sketch",family:4,items:"Sofa + coffee table",truck:"Truck 4",driver:"Devon L.",status:"Scheduled",flag:""},
+  {id:"D1031",date:"2026-05-01",day:"Friday",time:"11:30 AM",hood:"Weston",agency:"Sketch",family:6,items:"Living room set",truck:"Truck 4",driver:"Priya S.",status:"Scheduled",flag:""},
+  {id:"D1032",date:"2026-05-01",day:"Friday",time:"09:30 AM",hood:"Weston",agency:"Regeneration Community Services",family:6,items:"Bed frame + mattress",truck:"Truck 2",driver:"Marcus T.",status:"At Risk",flag:"Client unreachable"},
+  {id:"D1033",date:"2026-05-01",day:"Friday",time:"08:00 AM",hood:"Weston",agency:"Covenant House",family:1,items:"Sofa + coffee table",truck:"Truck 5",driver:"Omar K.",status:"Scheduled",flag:""},
+  {id:"D1034",date:"2026-05-02",day:"Saturday",time:"03:00 PM",hood:"Downtown East",agency:"COSTI Immigrant Services",family:1,items:"Dresser + bed frame",truck:"Truck 1",driver:"Sandra W.",status:"Scheduled",flag:""},
+  {id:"D1035",date:"2026-05-02",day:"Saturday",time:"09:00 AM",hood:"Lawrence Heights",agency:"Sketch",family:5,items:"Full bedroom set",truck:"Truck 5",driver:"Marcus T.",status:"Completed",flag:""},
+  {id:"D1036",date:"2026-05-02",day:"Saturday",time:"10:00 AM",hood:"Malvern",agency:"CAMH",family:6,items:"Sofa + coffee table",truck:"Truck 3",driver:"Devon L.",status:"Scheduled",flag:""},
+  {id:"D1037",date:"2026-05-02",day:"Saturday",time:"10:30 AM",hood:"Regent Park",agency:"Dixon Hall",family:5,items:"Full bedroom set",truck:"Truck 3",driver:"Marcus T.",status:"Cancelled",flag:""},
+  {id:"D1038",date:"2026-05-02",day:"Saturday",time:"08:00 AM",hood:"Thorncliffe Park",agency:"Eva's Initiatives",family:2,items:"Bed frame + mattress",truck:"Truck 5",driver:"Priya S.",status:"Scheduled",flag:""},
+  {id:"D1039",date:"2026-05-02",day:"Saturday",time:"10:00 AM",hood:"Lawrence Heights",agency:"CAMH",family:6,items:"Kitchen essentials + bed",truck:"Truck 4",driver:"Sandra W.",status:"Scheduled",flag:""},
+  {id:"D1040",date:"2026-05-02",day:"Saturday",time:"08:30 AM",hood:"North York",agency:"CAMH",family:6,items:"Bed frame + mattress",truck:"Truck 1",driver:"Devon L.",status:"Completed",flag:""},
+  {id:"D1041",date:"2026-05-02",day:"Saturday",time:"09:30 AM",hood:"Thorncliffe Park",agency:"Salvation Army",family:6,items:"Sofa + coffee table",truck:"Truck 3",driver:"Sandra W.",status:"Completed",flag:""},
+  {id:"D1042",date:"2026-05-02",day:"Saturday",time:"03:30 PM",hood:"Scarborough",agency:"CAMH",family:6,items:"Bed frame + mattress",truck:"Truck 5",driver:"Omar K.",status:"Cancelled",flag:""},
+  {id:"D1043",date:"2026-05-02",day:"Saturday",time:"08:00 AM",hood:"Etobicoke",agency:"CAMH",family:4,items:"Living room set",truck:"Truck 3",driver:"Devon L.",status:"At Risk",flag:"Truck capacity conflict"},
+];
+
+const DAYS = ["All","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+let activeDay = "All";
+
+function filtered(){
+  return activeDay==="All" ? RAW : RAW.filter(r=>r.day===activeDay);
+}
+
+function statusClass(s){
+  if(s==="Scheduled") return "pill-scheduled";
+  if(s==="Completed") return "pill-completed";
+  if(s==="At Risk") return "pill-at-risk";
+  return "pill-cancelled";
+}
+
+// --- KPIs (always whole week) ---
+function renderKPIs(){
+  const total = RAW.length;
+  const scheduled = RAW.filter(r=>r.status==="Scheduled").length;
+  const atRisk = RAW.filter(r=>r.status==="At Risk").length;
+  const completed = RAW.filter(r=>r.status==="Completed").length;
+  const families = RAW.reduce((s,r)=>s+r.family,0);
+
+  const kpis = [
+    {label:"Total Deliveries",value:total,sub:"this week",cls:""},
+    {label:"Scheduled",value:scheduled,sub:"pending",cls:""},
+    {label:"At Risk",value:atRisk,sub:"need action",cls:"risk"},
+    {label:"Completed",value:completed,sub:"this week",cls:"ok"},
+    {label:"Families Served",value:families,sub:"family members",cls:""},
+  ];
+  document.getElementById("kpi-grid").innerHTML = kpis.map(k=>`
+    <div class="kpi-card">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value ${k.cls}">${k.value}</div>
+      <div class="kpi-sub">${k.sub}</div>
+    </div>`).join("");
+}
+
+// --- Insight ---
+function renderInsight(){
+  const atRisk = RAW.filter(r=>r.status==="At Risk");
+  const wednesdayRisk = atRisk.filter(r=>r.day==="Wednesday").length;
+  document.getElementById("insight-banner").innerHTML =
+    `<strong>Heads up:</strong> ${atRisk.length} deliveries are flagged at-risk this week. Wednesday has the highest concentration (${wednesdayRisk} flags), primarily from truck capacity conflicts. 3 clients are currently unreachable — consider proactive outreach before their delivery window.`;
+}
+
+// --- Day tabs ---
+function renderTabs(){
+  document.getElementById("day-tabs").innerHTML = DAYS.map(d=>{
+    const hasRisk = d!=="All" && RAW.some(r=>r.day===d&&r.status==="At Risk");
+    return `<button class="day-tab${d===activeDay?" active":""}" data-day="${d}">${d}${hasRisk?'<span class="risk-dot"></span>':''}</button>`;
+  }).join("");
+  document.querySelectorAll(".day-tab").forEach(btn=>{
+    btn.addEventListener("click",()=>{activeDay=btn.dataset.day;renderAll();});
+  });
+}
+
+// --- Table ---
+function renderTable(){
+  const rows = filtered();
+  document.getElementById("table-sub").textContent = `${rows.length} deliveries`;
+  document.getElementById("delivery-tbody").innerHTML = rows.map(r=>`
+    <tr>
+      <td class="td-id">${r.id}</td>
+      <td class="td-time">${r.time}</td>
+      <td>${r.hood}</td>
+      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.agency}</td>
+      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.items}</td>
+      <td>${r.driver}</td>
+      <td><span class="pill ${statusClass(r.status)}"><span class="pill-dot"></span>${r.status}</span></td>
+      <td>${r.flag?`<span class="risk-tag">${r.flag}</span>`:''}</td>
+    </tr>`).join("");
+}
+
+// --- Risk Panel ---
+function renderRiskPanel(){
+  const risks = RAW.filter(r=>r.status==="At Risk");
+  document.getElementById("risk-count-label").textContent = `${risks.length} flagged`;
+  document.getElementById("risk-panel").innerHTML = risks.map(r=>`
+    <div class="risk-item">
+      <div class="risk-item-top"><span class="risk-id">${r.id}</span><span class="risk-day">${r.day}</span></div>
+      <div class="risk-reason">${r.flag}</div>
+      <div class="risk-meta">${r.hood} · ${r.driver} · ${r.time}</div>
+    </div>`).join("");
+}
+
+// --- Chart: deliveries by day ---
+let dayChart = null;
+function renderDayChart(){
+  const days = ["Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const statuses = ["Scheduled","At Risk","Completed","Cancelled"];
+  const colors = {
+    "Scheduled":"#01696f","At Risk":"#964219","Completed":"#437a22","Cancelled":"#bab9b4"
+  };
+  const datasets = statuses.map(s=>({
+    label:s,
+    data:days.map(d=>RAW.filter(r=>r.day===d&&r.status===s).length),
+    backgroundColor:colors[s],
+    borderRadius:4,
+  }));
+  const ctx = document.getElementById("chart-day").getContext("2d");
+  if(dayChart) dayChart.destroy();
+  dayChart = new Chart(ctx,{
+    type:"bar",
+    data:{labels:days.map(d=>d.slice(0,3)),datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:"bottom",labels:{boxWidth:10,font:{size:10},padding:10}}},
+      scales:{
+        x:{stacked:true,grid:{display:false},ticks:{font:{size:11}}},
+        y:{stacked:true,grid:{color:"rgba(120,120,100,0.08)"},ticks:{font:{size:10},stepSize:2}}
+      }
+    }
+  });
+}
+
+// --- Truck grid ---
+function renderTrucks(){
+  const trucks = ["Truck 1","Truck 2","Truck 3","Truck 4","Truck 5"];
+  const activeFn = r=>r.status==="Scheduled"||r.status==="At Risk";
+  const max = Math.max(...trucks.map(t=>RAW.filter(r=>r.truck===t&&activeFn(r)).length));
+  document.getElementById("truck-grid").innerHTML = trucks.map(t=>{
+    const active = RAW.filter(r=>r.truck===t&&activeFn(r)).length;
+    const hasRisk = RAW.some(r=>r.truck===t&&r.status==="At Risk");
+    const pct = max>0?(active/max*100):0;
+    return `<div class="truck-row">
+      <div class="truck-name">${t}</div>
+      <div class="truck-bar-wrap"><div class="truck-bar${hasRisk?" risk":""}" style="width:${pct}%"></div></div>
+      <div class="truck-count">${active}</div>
+    </div>`;
+  }).join("");
+}
+
+function renderAll(){
+  renderTabs();
+  renderTable();
+}
+
+
+function topCount(items, keyFn, filterFn = () => true){
+  const counts = {};
+  items.filter(filterFn).forEach(item => {
+    const key = keyFn(item);
+    counts[key] = (counts[key] || 0) + 1;
+  });
+  const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  return entries[0] || [null, 0];
+}
+
+function answerQuestion(q){
+  const text = q.trim().toLowerCase();
+  const atRisk = RAW.filter(r=>r.status==="At Risk");
+  if(/how many .*at[- ]?risk/.test(text)){
+    return `<strong>${atRisk.length} deliveries</strong> are flagged at-risk this week.`;
+  }
+  if(/which driver .*most at[- ]?risk/.test(text)){
+    const [driver, count] = topCount(RAW, r=>r.driver, r=>r.status==="At Risk");
+    return `<strong>${driver}</strong> has the most at-risk deliveries this week with <strong>${count}</strong> flagged stops.`;
+  }
+  if(/most common risk reason|top risk reason|common risk/.test(text)){
+    const [reason, count] = topCount(atRisk, r=>r.flag);
+    return `<strong>${reason}</strong> is the most common risk reason, affecting <strong>${count}</strong> deliveries.`;
+  }
+  if(/which neighborhood .*most deliveries|top neighborhood|most deliveries/.test(text)){
+    const [hood, count] = topCount(RAW, r=>r.hood);
+    return `<strong>${hood}</strong> has the most deliveries this week with <strong>${count}</strong> scheduled records.`;
+  }
+  if(/families .*wednesday|served on wednesday/.test(text)){
+    const total = RAW.filter(r=>r.day==="Wednesday").reduce((sum, r)=>sum + r.family, 0);
+    return `<strong>${total} family members</strong> are represented in Wednesday's delivery records.`;
+  }
+  if(/which day .*most risk|highest risk day/.test(text)){
+    const [day, count] = topCount(RAW, r=>r.day, r=>r.status==="At Risk");
+    return `<strong>${day}</strong> has the highest number of at-risk deliveries with <strong>${count}</strong> flagged stops.`;
+  }
+  return `I can answer simple operational questions like at-risk counts, top drivers, top neighborhoods, risk reasons, and day-level family volume. Try one of the example prompts.`;
+}
+
+function bindAskData(){
+  const input = document.getElementById('ask-input');
+  const btn = document.getElementById('ask-btn');
+  const answer = document.getElementById('ask-answer');
+  const run = () => answer.innerHTML = answerQuestion(input.value);
+  btn.addEventListener('click', run);
+  input.addEventListener('keydown', e => { if(e.key === 'Enter') run(); });
+  document.querySelectorAll('.ask-chip').forEach(chip => chip.addEventListener('click', () => {
+    input.value = chip.dataset.q;
+    run();
+  }));
+  run();
+}
+
+// Init
+renderKPIs();
+renderInsight();
+renderTabs();
+renderTable();
+renderRiskPanel();
+renderDayChart();
+renderTrucks();
+bindAskData();
+
+// Theme toggle
+(function(){
+  const t=document.querySelector('[data-theme-toggle]'),r=document.documentElement;
+  let d=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
+  r.setAttribute('data-theme',d);
+  t&&t.addEventListener('click',()=>{
+    d=d==='dark'?'light':'dark';
+    r.setAttribute('data-theme',d);
+  });
+})();
+</script>
+</body>
+</html>
